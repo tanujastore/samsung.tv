@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+  :root { --bg:#0b0b10; --text:#f5f5f7; --dim:#9a9aa5; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
+    font-family:-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #hero { position:absolute; inset:0; transition:background 0.8s ease; }
+  #hero::after { content:""; position:absolute; inset:0;
+    background:linear-gradient(to top, var(--bg) 8%, rgba(11,11,16,0.55) 45%, rgba(11,11,16,0.1) 100%),
+               linear-gradient(to right, rgba(11,11,16,0.7), transparent 60%); }
+  #top { position:absolute; top:0; left:0; right:0; height:110px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 90px; z-index:5; }
+  #nav { display:flex; gap:44px; font-size:30px; color:var(--dim); }
+  #nav span.active { color:var(--text); font-weight:600; }
+  #clock { font-size:30px; color:var(--dim); font-variant-numeric:tabular-nums; }
+  #info { position:absolute; left:90px; top:300px; width:900px; z-index:5; }
+  #info .tag { font-size:24px; letter-spacing:4px; text-transform:uppercase; color:var(--dim); margin-bottom:18px; }
+  #info h1 { font-size:96px; font-weight:700; line-height:1.05; margin-bottom:22px; }
+  #info p { font-size:30px; color:#d0d0d8; line-height:1.4; max-width:760px; }
+  #rows { position:absolute; left:0; right:0; bottom:60px; z-index:5; }
+  .row-title { font-size:28px; margin:0 0 16px 90px; color:var(--dim); font-weight:600; }
+  .row { display:flex; gap:28px; padding:20px 90px 34px; overflow:hidden; white-space:nowrap; }
+  .tile { flex:0 0 auto; width:300px; height:170px; border-radius:20px; position:relative;
+    display:flex; align-items:flex-end; padding:18px 22px; font-size:30px; font-weight:600;
+    transition:transform .22s ease, box-shadow .22s ease; box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  .tile .glyph { position:absolute; top:16px; left:22px; font-size:54px; font-weight:800; opacity:.95; }
+  .tile.focus { transform:scale(1.14) translateY(-6px); box-shadow:0 26px 60px rgba(0,0,0,.7), 0 0 0 5px rgba(255,255,255,.95); z-index:3; }
+  #toast { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:22px; color:var(--dim); z-index:6; opacity:0; transition:opacity .3s; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="hero"></div>
+
+<div id="top">
+  <div id="nav"><span class="active">Home</span><span>Apps</span><span>Library</span><span>Settings</span></div>
+  <div id="clock"></div>
+</div>
+
+<div id="info">
+  <div class="tag" id="i-tag"></div>
+  <h1 id="i-title"></h1>
+  <p id="i-desc"></p>
+</div>
+
+<div id="rows"></div>
+<div id="toast"></div>
+
+<script>
+/* ============ EDIT THIS SECTION TO CUSTOMISE ============ */
+// tizenId: Tizen app ID (may differ by TV model/region; falls back to url if it fails)
+const ROWS = [
+  { title: "Apps", items: [
+    { name:"YouTube", glyph:"▶", colors:["#ff2d2d","#8a0000"], tizenId:"111299001912", url:"https://www.youtube.com/tv",
+      tag:"Video", desc:"Watch videos, music and live streams." },
+    { name:"Netflix", glyph:"N", colors:["#e50914","#2b0003"], tizenId:"3201907018807", url:"https://www.netflix.com",
+      tag:"Streaming", desc:"Series, films and documentaries." },
+    { name:"Prime Video", glyph:"P", colors:["#00a8e1","#04283a"], tizenId:"3201512006785", url:"https://www.primevideo.com",
+      tag:"Streaming", desc:"Included movies and originals." },
+    { name:"Spotify", glyph:"♫", colors:["#1ed760","#06280f"], tizenId:"3201606009684", url:"https://open.spotify.com",
+      tag:"Music", desc:"Your music and podcasts." },
+    { name:"Disney+", glyph:"D", colors:["#2b59ff","#0a1238"], tizenId:"3201901017640", url:"https://www.disneyplus.com",
+      tag:"Streaming", desc:"Stories you love." },
+  ]},
+  { title: "My Links", items: [
+    { name:"Google", glyph:"G", colors:["#4285f4","#10234a"], url:"https://www.google.com", tag:"Web", desc:"Search the web." },
+    { name:"News", glyph:"☰", colors:["#8e8e93","#26262b"], url:"https://news.google.com", tag:"Web", desc:"Today's headlines." },
+    { name:"Weather", glyph:"☀", colors:["#ff9f0a","#3a2400"], url:"https://weather.com", tag:"Web", desc:"Forecast for your area." },
+    { name:"Add yours", glyph:"+", colors:["#5e5ce6","#1a1940"], url:"", tag:"Customise", desc:"Edit the ROWS list in index.html to add your own tiles." },
+  ]},
+];
+/* ========================================================= */
+
+const KEY = { LEFT:37, UP:38, RIGHT:39, DOWN:40, ENTER:13, BACK:10009, ESC:27 };
+let r = 0, c = 0;
+const rowsEl = document.getElementById("rows");
+const tileEls = [];
+
+ROWS.forEach((row, ri) => {
+  const wrap = document.createElement("div");
+  const t = document.createElement("div"); t.className = "row-title"; t.textContent = row.title;
+  const rowEl = document.createElement("div"); rowEl.className = "row";
+  tileEls[ri] = [];
+  row.items.forEach((it) => {
+    const el = document.createElement("div"); el.className = "tile";
+    el.style.background = `linear-gradient(145deg, ${it.colors[0]}, ${it.colors[1]})`;
+    el.innerHTML = `<span class="glyph">${it.glyph}</span>${it.name}`;
+    rowEl.appendChild(el); tileEls[ri].push(el);
+  });
+  wrap.appendChild(t); wrap.appendChild(rowEl); rowsEl.appendChild(wrap);
+});
+
+function render() {
+  tileEls.forEach((row, ri) => row.forEach((el, ci) => el.classList.toggle("focus", ri === r && ci === c)));
+  const it = ROWS[r].items[c];
+  document.getElementById("i-tag").textContent = it.tag;
+  document.getElementById("i-title").textContent = it.name;
+  document.getElementById("i-desc").textContent = it.desc;
+  document.getElementById("hero").style.background =
+    `radial-gradient(ellipse at 70% 20%, ${it.colors[0]}aa, transparent 60%), linear-gradient(160deg, ${it.colors[1]}, #0b0b10)`;
+  const el = tileEls[r][c], rowEl = el.parentElement;
+  rowEl.scrollLeft = Math.max(0, el.offsetLeft - 400);
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function launch() {
+  const it = ROWS[r].items[c];
+  if (!it.url && !it.tizenId) { toast(it.desc); return; }
+  try {
+    if (window.tizen && tizen.application && it.tizenId) {
+      tizen.application.launch(it.tizenId, null, () => {
+        if (it.url) window.location.href = it.url;
+      });
+      return;
+    }
+  } catch (e) {}
+  if (it.url) window.location.href = it.url;
+}
+
+document.addEventListener("keydown", (e) => {
+  switch (e.keyCode) {
+    case KEY.LEFT:  c = Math.max(0, c - 1); break;
+    case KEY.RIGHT: c = Math.min(ROWS[r].items.length - 1, c + 1); break;
+    case KEY.UP:    r = Math.max(0, r - 1); c = Math.min(c, ROWS[r].items.length - 1); break;
+    case KEY.DOWN:  r = Math.min(ROWS.length - 1, r + 1); c = Math.min(c, ROWS[r].items.length - 1); break;
+    case KEY.ENTER: launch(); return;
+    case KEY.BACK:
+      try { if (window.tizen) tizen.application.getCurrentApplication().exit(); } catch (x) {}
+      return;
+    default: return;
+  }
+  e.preventDefault(); render();
+});
+
+function tick() {
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    d.toLocaleDateString([], { weekday:"short", month:"short", day:"numeric" }) + "  " +
+    d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+}
+tick(); setInterval(tick, 20000);
+
+try { if (window.tizen && tizen.tvinputdevice) {
+  ["MediaPlay","MediaPause"].forEach(k => { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
+}} catch (e) {}
+
+render();
+</script>
+</body>
+</html>
