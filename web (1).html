@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Living Room Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #0b0b10; --fg: #f5f5f7; --dim: #a0a0ac; --soft: #d0d0d8; --ring: #ffffff;
+    --font-display: "Sora", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-body: "Figtree", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); }
+  #stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  #hero { position: absolute; inset: 0; transition: background 0.8s ease; }
+  #hero::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to top, var(--bg) 8%, rgba(11,11,16,0.55) 45%, rgba(11,11,16,0.1) 100%),
+                linear-gradient(to right, rgba(11,11,16,0.7), transparent 60%); }
+  #top { position: absolute; top: 0; left: 0; right: 0; height: 110px; display: flex; align-items: center;
+    justify-content: space-between; gap: 16px; padding: 0 72px; z-index: 5; }
+  #nav { display: flex; gap: 12px; font-family: var(--font-display); font-size: 30px; }
+  #nav a { color: var(--dim); text-decoration: none; padding: 8px 22px; border-radius: 999px; cursor: pointer;
+    transition: background .2s, color .2s; outline: none; }
+  #nav a.active { color: var(--fg); }
+  #nav a.navfocus { background: rgba(255,255,255,.2); color: #fff; box-shadow: 0 0 0 3px var(--ring); }
+  #clock { font-size: 30px; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #info { position: absolute; left: 90px; top: 300px; width: 900px; max-width: calc(100% - 180px); z-index: 5; }
+  #info .tag { font-size: 24px; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); margin-bottom: 18px; }
+  #info h1 { font-family: var(--font-display); font-size: 96px; font-weight: 700; line-height: 1.05; margin-bottom: 22px; text-wrap: balance; }
+  #info p { font-size: 30px; color: var(--soft); line-height: 1.4; max-width: 760px; }
+  #rows { position: absolute; left: 0; right: 0; bottom: 60px; z-index: 5; }
+  .row-title { font-family: var(--font-display); font-size: 28px; margin: 0 0 16px 90px; color: var(--dim); }
+  .row { display: flex; gap: 28px; padding: 20px 90px 34px; overflow: hidden; white-space: nowrap; }
+  a.tile { flex: 0 0 auto; width: 300px; height: 170px; border-radius: 20px; position: relative;
+    display: flex; align-items: flex-end; padding: 18px 22px; font-size: 30px; font-weight: 600; color: #fff;
+    text-decoration: none; outline: none; cursor: pointer;
+    transition: transform .22s ease, box-shadow .22s ease; box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+  a.tile .glyph { position: absolute; top: 16px; left: 22px; font-size: 54px; font-weight: 800; line-height: 1; }
+  a.tile.focus { transform: scale(1.14) translateY(-6px);
+    box-shadow: 0 26px 60px rgba(0,0,0,.7), 0 0 0 5px var(--ring); z-index: 3; }
+  #settings { position: absolute; left: 90px; bottom: 110px; z-index: 5; display: flex; flex-direction: column; gap: 18px; width: 640px; max-width: calc(100% - 32px); }
+  .opt { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 30px; border-radius: 18px;
+    background: rgba(255,255,255,.1); font-size: 30px; cursor: pointer; border: 0; color: var(--fg); font-family: var(--font-body); text-align: left; outline: none;
+    transition: transform .2s, box-shadow .2s, background .2s; }
+  .opt span.state { color: var(--dim); font-weight: 600; }
+  .opt.focus { background: rgba(255,255,255,.22); transform: scale(1.04); box-shadow: 0 0 0 4px var(--ring); }
+  #hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 20px; color: var(--dim); z-index: 6; }
+
+  @media (max-width: 700px) {
+    #top { height: 64px; padding: 0 12px; }
+    #nav { gap: 2px; font-size: 14px; }
+    #nav a { padding: 6px 10px; }
+    #clock { font-size: 13px; }
+    #info { left: 16px; top: 88px; max-width: calc(100% - 32px); }
+    #info .tag { font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
+    #info h1 { font-size: 40px; margin-bottom: 10px; }
+    #info p { font-size: 16px; }
+    #rows { bottom: 36px; }
+    .row-title { font-size: 15px; margin: 0 0 4px 16px; }
+    .row { gap: 14px; padding: 12px 16px 16px; overflow-x: auto; }
+    a.tile { width: 150px; height: 88px; font-size: 16px; padding: 10px 12px; border-radius: 12px; }
+    a.tile .glyph { font-size: 28px; top: 8px; left: 12px; }
+    a.tile.focus { transform: scale(1.06); box-shadow: 0 10px 24px rgba(0,0,0,.6), 0 0 0 3px var(--ring); }
+    #settings { left: 16px; bottom: 60px; }
+    .opt { font-size: 16px; padding: 14px 16px; }
+    #hint { font-size: 12px; bottom: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { #hero, a.tile, .opt, #nav a { transition: none; } }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="hero"></div>
+  <div id="top">
+    <div id="nav"></div>
+    <div id="clock"></div>
+  </div>
+  <div id="info">
+    <div class="tag" id="i-tag"></div>
+    <h1 id="i-title"></h1>
+    <p id="i-desc"></p>
+  </div>
+  <div id="rows"></div>
+  <div id="settings" hidden></div>
+  <div id="hint">Arrow keys to move, OK or Enter to open. Up goes to the top menu.</div>
+</div>
+
+<script>
+/* ============ EDIT THIS SECTION TO CUSTOMISE ============ */
+var ROWS = [
+  { title: "Apps", items: [
+    { name:"YouTube", glyph:"▶", colors:["#ff2d2d","#8a0000"], url:"https://www.youtube.com/tv", tag:"Video", desc:"Watch videos, music and live streams." },
+    { name:"Netflix", glyph:"N", colors:["#e50914","#2b0003"], url:"https://www.netflix.com", tag:"Streaming", desc:"Series, films and documentaries." },
+    { name:"Prime Video", glyph:"P", colors:["#00a8e1","#04283a"], url:"https://www.primevideo.com", tag:"Streaming", desc:"Included movies and originals." },
+    { name:"Spotify", glyph:"♫", colors:["#1ed760","#06280f"], url:"https://open.spotify.com", tag:"Music", desc:"Your music and podcasts." },
+    { name:"Disney+", glyph:"D", colors:["#2b59ff","#0a1238"], url:"https://www.disneyplus.com", tag:"Streaming", desc:"Stories you love." }
+  ]},
+  { title: "My Links", items: [
+    { name:"Google", glyph:"G", colors:["#4285f4","#10234a"], url:"https://www.google.com", tag:"Web", desc:"Search the web." },
+    { name:"News", glyph:"☰", colors:["#8e8e93","#26262b"], url:"https://news.google.com", tag:"Web", desc:"Today's headlines." },
+    { name:"Weather", glyph:"☀", colors:["#ff9f0a","#3a2400"], url:"https://weather.com", tag:"Web", desc:"Forecast for your area." }
+  ]}
+];
+/* ========================================================= */
+
+// Which rows each top-menu tab shows (numbers are positions in ROWS)
+var NAV = [["home", "Home", [0, 1]], ["apps", "Apps", [0]], ["library", "Library", [1]], ["settings", "Settings", []]];
+var view = "home", zone = "rows", p = 0, c = 0, navI = 0, setI = 0;
+var prefs = { h24: false, tint: true };
+try { var saved = JSON.parse(localStorage.getItem("tvprefs") || "{}"); if (saved.h24 !== undefined) prefs.h24 = !!saved.h24; if (saved.tint !== undefined) prefs.tint = !!saved.tint; } catch (e) {}
+function savePrefs() { try { localStorage.setItem("tvprefs", JSON.stringify(prefs)); } catch (e) {} }
+
+var navEl = document.getElementById("nav");
+var rowsEl = document.getElementById("rows");
+var setEl = document.getElementById("settings");
+var navEls = [], rowWraps = [], tileEls = [], optEls = [];
+
+NAV.forEach(function (n, i) {
+  var a = document.createElement("a"); a.textContent = n[1]; a.href = "#" + n[0];
+  a.addEventListener("click", function (e) { e.preventDefault(); navI = i; view = n[0]; p = 0; c = 0; zone = view === "settings" ? "settings" : "rows"; setI = 0; render(); });
+  navEl.appendChild(a); navEls.push(a);
+});
+
+ROWS.forEach(function (row, ri) {
+  var wrap = document.createElement("div");
+  var t = document.createElement("div"); t.className = "row-title"; t.textContent = row.title;
+  var rowEl = document.createElement("div"); rowEl.className = "row";
+  tileEls[ri] = [];
+  row.items.forEach(function (it, ci) {
+    var el = document.createElement("a");
+    el.className = "tile"; el.href = it.url; el.target = "_blank"; el.rel = "noopener";
+    el.style.background = "linear-gradient(145deg, " + it.colors[0] + ", " + it.colors[1] + ")";
+    var g = document.createElement("span"); g.className = "glyph"; g.textContent = it.glyph;
+    el.appendChild(g); el.appendChild(document.createTextNode(it.name));
+    function pick() { var vp = NAV[navI][2].indexOf(ri); if (vp < 0) return; p = vp; c = ci; zone = "rows"; render(); }
+    el.addEventListener("mouseenter", pick); el.addEventListener("focus", pick);
+    rowEl.appendChild(el); tileEls[ri].push(el);
+  });
+  wrap.appendChild(t); wrap.appendChild(rowEl); rowsEl.appendChild(wrap); rowWraps.push(wrap);
+});
+
+var OPTS = [
+  { label: "24-hour clock", get: function () { return prefs.h24; }, toggle: function () { prefs.h24 = !prefs.h24; tick(); } },
+  { label: "Coloured backdrop", get: function () { return prefs.tint; }, toggle: function () { prefs.tint = !prefs.tint; } }
+];
+OPTS.forEach(function (o, i) {
+  var b = document.createElement("button"); b.type = "button"; b.className = "opt";
+  b.innerHTML = '<span>' + o.label + '</span><span class="state"></span>';
+  b.addEventListener("click", function () { setI = i; zone = "settings"; o.toggle(); savePrefs(); render(); });
+  setEl.appendChild(b); optEls.push(b);
+});
+
+function render() {
+  var vis = NAV[navI][2];
+  view = NAV[navI][0];
+  rowWraps.forEach(function (w, i) { w.hidden = vis.indexOf(i) < 0; });
+  setEl.hidden = view !== "settings";
+  navEls.forEach(function (a, i) {
+    a.classList.toggle("active", i === navI);
+    a.classList.toggle("navfocus", zone === "nav" && i === navI);
+  });
+  var hero = document.getElementById("hero");
+  if (view === "settings") {
+    document.getElementById("i-tag").textContent = "Preferences";
+    document.getElementById("i-title").textContent = "Settings";
+    document.getElementById("i-desc").textContent = "Press OK on an option to switch it on or off. Your choices are remembered on this device.";
+    hero.style.background = "linear-gradient(160deg, #23232e, #0b0b10)";
+    optEls.forEach(function (b, i) {
+      b.classList.toggle("focus", zone === "settings" && i === setI);
+      b.lastChild.textContent = OPTS[i].get() ? "On" : "Off";
+    });
+    return;
+  }
+  if (p >= vis.length) p = vis.length - 1;
+  var r = vis[p];
+  if (c >= ROWS[r].items.length) c = ROWS[r].items.length - 1;
+  tileEls.forEach(function (row, ri) {
+    row.forEach(function (el, ci) { el.classList.toggle("focus", zone === "rows" && ri === r && ci === c); });
+  });
+  var it = ROWS[r].items[c];
+  document.getElementById("i-tag").textContent = it.tag;
+  document.getElementById("i-title").textContent = it.name;
+  document.getElementById("i-desc").textContent = it.desc;
+  hero.style.background = prefs.tint
+    ? "radial-gradient(ellipse at 70% 20%, " + it.colors[0] + "aa, transparent 60%), linear-gradient(160deg, " + it.colors[1] + ", #0b0b10)"
+    : "linear-gradient(160deg, #1a1a22, #0b0b10)";
+  var el = tileEls[r][c], rowEl = el.parentElement;
+  rowEl.scrollLeft = Math.max(0, el.offsetLeft - Math.min(400, rowEl.clientWidth / 3));
+}
+
+function setView(i) { navI = i; p = 0; c = 0; setI = 0; }
+
+document.addEventListener("keydown", function (e) {
+  var k = e.keyCode, vis = NAV[navI][2];
+  if (k === 37) {                                   // left
+    if (zone === "nav") setView(Math.max(0, navI - 1));
+    else if (zone === "rows") c = Math.max(0, c - 1);
+  } else if (k === 39) {                            // right
+    if (zone === "nav") setView(Math.min(NAV.length - 1, navI + 1));
+    else if (zone === "rows") c = Math.min(ROWS[vis[p]].items.length - 1, c + 1);
+  } else if (k === 38) {                            // up
+    if (zone === "rows") { if (p > 0) p--; else zone = "nav"; }
+    else if (zone === "settings") { if (setI > 0) setI--; else zone = "nav"; }
+  } else if (k === 40) {                            // down
+    if (zone === "nav") zone = view === "settings" ? "settings" : "rows";
+    else if (zone === "rows") { if (p < vis.length - 1) p++; }
+    else if (zone === "settings") { if (setI < OPTS.length - 1) setI++; }
+  } else if (k === 13) {                            // OK / Enter
+    if (zone === "nav") zone = view === "settings" ? "settings" : "rows";
+    else if (zone === "rows") { tileEls[vis[p]][c].click(); return; }
+    else if (zone === "settings") { OPTS[setI].toggle(); savePrefs(); }
+  } else return;
+  e.preventDefault(); render();
+});
+
+function tick() {
+  var d = new Date();
+  document.getElementById("clock").textContent =
+    d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + "  " +
+    d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: !prefs.h24 });
+}
+tick(); setInterval(tick, 20000);
+render();
+</script>
+</body>
+</html>
